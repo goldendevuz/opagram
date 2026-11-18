@@ -116,7 +116,11 @@ function Photo({ backend, m }: { backend: Backend; m: Msg }) {
   return (
     <button type="button" className={`photo ${url ? 'ready' : ''} ${state}`} onClick={() => !url && run()}>
       {url && <img src={url} alt="" draggable={false} />}
-      {state === 'failed' && <span>↻</span>}
+      {state === 'failed' && (
+        <span className="fail">
+          ↻<small>{backend.lastError()}</small>
+        </span>
+      )}
     </button>
   )
 }

@@ -1693,3 +1693,23 @@ button {
   text-transform: uppercase;
   color: var(--ink-2);
 }
+
+.read-all {
+  margin-left: auto;
+  color: var(--teal);
+}
+.read-all:hover {
+  transform: scale(1.12);
+}
+.photo .fail {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 0 12px;
+}
+.photo .fail small {
+  font-size: 11px;
+  line-height: 1.2;
+  word-break: break-all;
+  opacity: 0.8;
+}

@@ -12,7 +12,18 @@ function hash(s: string) {
   return h >>> 0
 }
 
-export function Avatar({ backend, id, title, size = 50 }: { backend: Backend; id: string; title: string; size?: number }) {
+// the same seven colour pairs the official apps use for profiles without a photo
+const PALETTE: [string, string][] = [
+  ['#FF885E', '#FF516A'],
+  ['#FFCD6A', '#FFA85C'],
+  ['#82B1FF', '#665FFF'],
+  ['#A0DE7E', '#54CB68'],
+  ['#53EDD6', '#28C9B7'],
+  ['#72D5FD', '#2A9EF1'],
+  ['#E0A2F3', '#D669ED'],
+]
+
+export function Avatar({ backend, id, title, size = 50, colorId }: { backend: Backend; id: string; title: string; size?: number; colorId?: number }) {
   const [url, setUrl] = useState<string | null>(cache.get(id) ?? null)
 
   useEffect(() => {
@@ -28,8 +39,7 @@ export function Avatar({ backend, id, title, size = 50 }: { backend: Backend; id
   }, [backend, id])
 
   const h = hash(id + title)
-  const a = h % 360
-  const b = (a + 50 + (h % 70)) % 360
+  const [c1, c2] = PALETTE[(colorId ?? h) % 7]
   const letter = Array.from(title.replace(/^[^\p{L}\p{N}]+/u, ''))[0]?.toUpperCase() ?? '?'
   return (
     <span
@@ -41,7 +51,7 @@ export function Avatar({ backend, id, title, size = 50 }: { backend: Backend; id
         animationDelay: `${-(h % 9)}s`,
         background: url
           ? `center / cover url(${url})`
-          : `linear-gradient(135deg, hsl(${a} 90% 62%), hsl(${b} 85% 55%))`,
+          : `linear-gradient(160deg, ${c1}, ${c2})`,
       }}
     >
       {!url && letter}

@@ -122,6 +122,7 @@ export class DemoBackend implements Backend {
       readOutboxMaxId: this.readOut.get(p.id) ?? 0,
       presence: p.presence,
       username: p.username,
+      colorId: Number(p.id) % 7,
     }
   }
 
@@ -222,6 +223,10 @@ export class DemoBackend implements Backend {
   }
 
   async setTyping() {}
+
+  lastError() {
+    return ''
+  }
 
   async photo(): Promise<string> {
     return svgPhoto('#FF8A3D', '#6C3DFF')
