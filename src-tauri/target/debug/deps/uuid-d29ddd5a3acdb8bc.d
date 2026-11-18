@@ -1,0 +1,14 @@
+/home/kai/projects/opagram/src-tauri/target/debug/deps/uuid-d29ddd5a3acdb8bc.d: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/macros.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/builder.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/error.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/non_nil.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/parser.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/fmt.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/timestamp.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external/serde_support.rs
+
+/home/kai/projects/opagram/src-tauri/target/debug/deps/libuuid-d29ddd5a3acdb8bc.rmeta: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/macros.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/builder.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/error.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/non_nil.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/parser.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/fmt.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/timestamp.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external/serde_support.rs
+
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/lib.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/macros.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/builder.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/error.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/non_nil.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/parser.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/fmt.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/timestamp.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.29.3/src/external/serde_support.rs:

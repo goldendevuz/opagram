@@ -1,13 +1,26 @@
 name: OpaGram Android APK
 
+# Signed release APK, numbered by run like SaveTube: version OpaGram-<version>-nightly.<run>.apk,
+# version code = run + 100 so each build installs over the previous one. The key is the same every
+# time (ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD secrets), otherwise updates would fail.
 on:
+  workflow_dispatch:
   push:
     branches: [main, 'feat/**']
-  workflow_dispatch:
+    paths-ignore: ['src-tauri/**', '.github/workflows/desktop.yml', 'README.md']
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    name: Signed APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,10 +34,29 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx cap sync android
-      - name: Build debug APK
+      - name: Restore the signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "::error::ANDROID_KEYSTORE_BASE64 is not set"; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/opagram.p12"
+      - name: Build the APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          STORE_FILE: ${{ runner.temp }}/opagram.p12
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          RUN=$((GITHUB_RUN_NUMBER + 100))
+          ./gradlew assembleRelease --no-daemon -PopagramVersionCode=$RUN -PopagramVersionName=0.1.0-nightly.$RUN
+      - name: Name it and check the signature
+        run: |
+          RUN=$((GITHUB_RUN_NUMBER + 100))
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk "out/OpaGram-0.1.0-nightly.$RUN.apk"
+          apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -1)
+          "$apksigner" verify --print-certs "out/OpaGram-0.1.0-nightly.$RUN.apk" | grep -m1 'certificate SHA-256 digest'
       - uses: actions/upload-artifact@v4
         with:
-          name: OpaGram-android
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: OpaGram-android-${{ github.run_number }}
+          path: out/*.apk
+          if-no-files-found: error
