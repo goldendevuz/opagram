@@ -1,0 +1,71 @@
+name: OpaGram Desktop
+
+# Windows installer now; Linux and macOS are ready to switch on by adding them to the matrix below.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feat/desktop*']
+    paths: ['src-tauri/**', 'src/**', 'package*.json', 'vite.config.ts', '.github/workflows/desktop.yml']
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64 installer
+            os: windows-latest
+            bundle: nsis
+            target: x86_64-pc-windows-msvc
+            glob: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+            label: windows-x64
+          # - name: Linux x64 packages
+          #   os: ubuntu-24.04
+          #   bundle: deb,appimage
+          #   target: x86_64-unknown-linux-gnu
+          #   glob: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/*/*
+          #   label: linux-x64
+          # - name: macOS universal app
+          #   os: macos-latest
+          #   bundle: dmg
+          #   target: universal-apple-darwin
+          #   glob: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          #   label: macos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Linux system libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+      - name: Build the app
+        shell: bash
+        run: |
+          VERSION="0.1.0-nightly.$((GITHUB_RUN_NUMBER + 100))"
+          npx tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundle }} --config "{\"version\":\"$VERSION\"}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpaGram-${{ matrix.label }}-${{ github.run_number }}
+          path: ${{ matrix.glob }}
+          if-no-files-found: error
