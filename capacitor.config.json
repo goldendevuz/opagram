@@ -1,0 +1,7 @@
+{
+  "appId": "uz.univel.opagram",
+  "appName": "OpaGram",
+  "webDir": "dist",
+  "server": { "androidScheme": "https" },
+  "android": { "backgroundColor": "#0B0813" }
+}
