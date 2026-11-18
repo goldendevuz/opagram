@@ -234,7 +234,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       if (msg === 'keys.bad') return t('keys.bad')
       if (/network|timeout|connection/i.test(msg)) return t('err.network')
       const k = `err.${msg}` as Key
-      return DICTS[lang][k] ?? t('err.generic')
+      return DICTS[lang][k] ?? `${t('err.generic')}${msg ? ` (${msg.slice(0, 80)})` : ''}`
     },
     [t, lang],
   )

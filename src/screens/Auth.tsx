@@ -38,6 +38,7 @@ export function Auth({ step, setStep, backend, onKeys, onDone }: Props) {
     try {
       await fn()
     } catch (e) {
+      console.error('[opagram]', e)
       setError(err(e))
       if ((e as { errorMessage?: string }).errorMessage === 'API_ID_INVALID') setStep('keys')
     } finally {
