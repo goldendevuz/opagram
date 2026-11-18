@@ -1,0 +1,10 @@
+/home/kai/projects/opagram/src-tauri/target/debug/deps/toml_writer-c1cc417a323b3433.d: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/integer.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/key.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/string.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/value.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/write.rs
+
+/home/kai/projects/opagram/src-tauri/target/debug/deps/libtoml_writer-c1cc417a323b3433.rmeta: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/integer.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/key.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/string.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/value.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/write.rs
+
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/lib.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/integer.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/key.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/string.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/value.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.2.0+spec-1.1.0/src/write.rs:

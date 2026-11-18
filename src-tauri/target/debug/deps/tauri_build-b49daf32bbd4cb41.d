@@ -1,0 +1,11 @@
+/home/kai/projects/opagram/src-tauri/target/debug/deps/tauri_build-b49daf32bbd4cb41.d: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/acl.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/manifest.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/mobile.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/windows-app-manifest.xml
+
+/home/kai/projects/opagram/src-tauri/target/debug/deps/libtauri_build-b49daf32bbd4cb41.rlib: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/acl.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/manifest.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/mobile.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/windows-app-manifest.xml
+
+/home/kai/projects/opagram/src-tauri/target/debug/deps/libtauri_build-b49daf32bbd4cb41.rmeta: /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/lib.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/acl.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/manifest.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/mobile.rs /home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/windows-app-manifest.xml
+
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/lib.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/acl.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/manifest.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/mobile.rs:
+/home/kai/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-build-2.7.5/src/windows-app-manifest.xml:
