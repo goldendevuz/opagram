@@ -5,12 +5,9 @@ Web first (also packaged as an Android app), desktop later.
 
 Languages: Uzbek (default), Russian, English.
 
-## Secrets
+## Keys
 
-Telegram `api_id` and `api_hash` are never committed. Provide them through
-environment variables locally and GitHub Secrets in CI:
-
-- `TELEGRAM_API_ID`
-- `TELEGRAM_API_HASH`
-
-User sessions stay on the user's own device and are never sent to a server.
+The project ships with no Telegram keys. Each user enters their own `api_id`
+and `api_hash` (from my.telegram.org) on first launch, then logs in with their
+own account. The keys and the session are stored only on that user's device
+and are never sent to any server.
