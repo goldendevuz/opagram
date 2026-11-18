@@ -1713,3 +1713,21 @@ button {
   word-break: break-all;
   opacity: 0.8;
 }
+
+.key-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.key-actions .link {
+  margin: 0;
+}
+.link-btn {
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+.link-btn:hover {
+  color: var(--ink);
+}

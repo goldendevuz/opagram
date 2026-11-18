@@ -93,6 +93,8 @@ const uz = {
   'deleted': 'Xabar oʻchirilgan',
   'global': 'Telegramdan topilganlar',
   'sound': 'Ovoz',
+  'show': 'Koʻrsatish',
+  'hide': 'Yashirish',
   'markRead': 'Oʻqilgan deb belgilash',
   'markAllRead': 'Hammasini oʻqilgan qilish',
 }
@@ -189,6 +191,8 @@ const ru: Dict = {
   'deleted': 'Сообщение удалено',
   'global': 'Найдено в Telegram',
   'sound': 'Звук',
+  'show': 'Показать',
+  'hide': 'Скрыть',
   'markRead': 'Прочитано',
   'markAllRead': 'Прочитать все',
 }
@@ -283,6 +287,8 @@ const en: Dict = {
   'deleted': 'Message deleted',
   'global': 'Found on Telegram',
   'sound': 'Sound',
+  'show': 'Show',
+  'hide': 'Hide',
   'markRead': 'Mark as read',
   'markAllRead': 'Mark all as read',
 }

@@ -23,6 +23,7 @@ export function Auth({ step, setStep, backend, onKeys, onDone }: Props) {
   const [phone, setPhone] = useState('+998')
   const [code, setCode] = useState('')
   const [pw, setPw] = useState('')
+  const [reveal, setReveal] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -128,10 +129,10 @@ export function Auth({ step, setStep, backend, onKeys, onDone }: Props) {
             <>
               <p className="help">{t('keys.help')}</p>
               <Field label="api_id">
-                <input inputMode="numeric" autoComplete="off" value={apiId} onChange={(e) => setApiId(e.target.value)} placeholder="12345678" autoFocus />
+                <input type={reveal ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" value={apiId} onChange={(e) => setApiId(e.target.value)} placeholder="12345678" autoFocus />
               </Field>
               <Field label="api_hash">
-                <input autoComplete="off" spellCheck={false} value={apiHash} onChange={(e) => setApiHash(e.target.value)} placeholder="0123456789abcdef0123456789abcdef" />
+                <input type={reveal ? 'text' : 'password'} autoComplete="new-password" spellCheck={false} value={apiHash} onChange={(e) => setApiHash(e.target.value)} placeholder="0123456789abcdef0123456789abcdef" />
               </Field>
               <p className="safe">
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -139,9 +140,14 @@ export function Auth({ step, setStep, backend, onKeys, onDone }: Props) {
                 </svg>
                 {t('keys.safe')}
               </p>
-              <a className="link" href="https://my.telegram.org/apps" target="_blank" rel="noreferrer">
-                {t('keys.open')} ↗
-              </a>
+              <div className="key-actions">
+                <a className="link" href="https://my.telegram.org/apps" target="_blank" rel="noreferrer">
+                  {t('keys.open')} ↗
+                </a>
+                <button type="button" className="link-btn" onClick={() => setReveal((v) => !v)}>
+                  {reveal ? t('hide') : t('show')}
+                </button>
+              </div>
             </>
           )}
 
