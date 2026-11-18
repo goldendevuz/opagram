@@ -84,6 +84,10 @@ export interface Backend {
   readUpTo(chatId: string, maxId: number): Promise<void>
   setTyping(chatId: string): Promise<void>
   resolve(username: string): Promise<Chat | undefined>
+  /** Everything beyond the first page of chats (can be large). */
+  moreDialogs(): Promise<Chat[]>
+  /** People, groups and channels found on Telegram by name or @username. */
+  search(query: string): Promise<Chat[]>
   photo(chatId: string, msgId: number): Promise<string | undefined>
   media(chatId: string, msgId: number): Promise<{ url: string; mime: string } | undefined>
   avatar(chatId: string): Promise<string | undefined>

@@ -200,36 +200,56 @@ export class TelegramBackend implements Backend {
     return list.map((d) => this.chatOf(d))
   }
 
+  private fromEntity(e: any): Chat | undefined {
+    if (!(e instanceof Api.User || e instanceof Api.Chat || e instanceof Api.Channel)) return undefined
+    const id = utils.getPeerId(e).toString()
+    this.entities.set(id, e)
+    const isUser = e instanceof Api.User
+    const broadcast = !isUser && !!(e as Api.Channel).broadcast
+    return {
+      id,
+      title: isUser ? [e.firstName, e.lastName].filter(Boolean).join(' ') || e.username || '…' : (e as any).title,
+      unread: 0,
+      previewText: '',
+      previewOut: false,
+      previewId: 0,
+      date: 0,
+      kind: isUser ? 'user' : broadcast ? 'channel' : 'group',
+      canWrite: !broadcast,
+      pinned: false,
+      muted: false,
+      readInboxMaxId: 0,
+      readOutboxMaxId: 0,
+      username: (e as any).username,
+      presence: isUser ? presenceOf(e) : undefined,
+      bot: isUser && !!e.bot,
+    }
+  }
+
   async resolve(username: string): Promise<Chat | undefined> {
     const name = username.replace(/^@/, '').trim()
     if (!/^[a-zA-Z][\w]{3,31}$/.test(name)) return undefined
     try {
-      const e: any = await this.client.getEntity(name)
-      const id = utils.getPeerId(e).toString()
-      this.entities.set(id, e)
-      const isUser = e instanceof Api.User
-      const broadcast = !!e.broadcast
-      return {
-        id,
-        title: isUser ? [e.firstName, e.lastName].filter(Boolean).join(' ') : e.title,
-        unread: 0,
-        previewText: '',
-        previewOut: false,
-        previewId: 0,
-        date: 0,
-        kind: isUser ? 'user' : broadcast ? 'channel' : 'group',
-        canWrite: !broadcast,
-        pinned: false,
-        muted: false,
-        readInboxMaxId: 0,
-        readOutboxMaxId: 0,
-        username: e.username,
-        presence: isUser ? presenceOf(e) : undefined,
-        bot: !!e.bot,
-      }
+      return this.fromEntity(await this.client.getEntity(name))
     } catch {
       return undefined
     }
+  }
+
+  async search(query: string): Promise<Chat[]> {
+    const q = query.replace(/^@/, '').trim()
+    if (q.length < 2) return []
+    try {
+      const r = await this.client.invoke(new Api.contacts.Search({ q, limit: 25 }))
+      return [...r.users, ...r.chats].map((e) => this.fromEntity(e)).filter((c): c is Chat => !!c)
+    } catch {
+      return []
+    }
+  }
+
+  async moreDialogs(): Promise<Chat[]> {
+    const list = await this.client.getDialogs({ limit: 1000 })
+    return list.map((d) => this.chatOf(d))
   }
 
   // ───────── messages ─────────

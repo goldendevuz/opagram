@@ -1684,3 +1684,12 @@ button {
     width: min(300px, 80vw);
   }
 }
+
+.section {
+  margin: 14px 14px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}

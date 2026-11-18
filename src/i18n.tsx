@@ -91,6 +91,7 @@ const uz = {
   'notify.denied': 'Brauzer ruxsat bermadi',
   'bot': 'bot',
   'deleted': 'Xabar oʻchirilgan',
+  'global': 'Telegramdan topilganlar',
 }
 
 type Dict = typeof uz
@@ -183,6 +184,7 @@ const ru: Dict = {
   'notify.denied': 'Браузер не разрешил',
   'bot': 'бот',
   'deleted': 'Сообщение удалено',
+  'global': 'Найдено в Telegram',
 }
 
 const en: Dict = {
@@ -273,6 +275,7 @@ const en: Dict = {
   'notify.denied': 'The browser did not allow it',
   'bot': 'bot',
   'deleted': 'Message deleted',
+  'global': 'Found on Telegram',
 }
 
 const DICTS: Record<Lang, Dict> = { uz, ru, en }

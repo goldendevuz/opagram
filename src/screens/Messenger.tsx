@@ -8,6 +8,7 @@ import { Settings } from '../components/Settings'
 import { ChatView, dateLabel } from '../components/ChatView'
 import { Ticks } from '../components/Bubble'
 import { notify } from '../lib/notify'
+import { searchKey } from '../lib/translit'
 
 interface Props {
   backend: Backend
@@ -26,7 +27,7 @@ export function Messenger({ backend, onLogout }: Props) {
   const [onlyUnread, setOnlyUnread] = useState(false)
   const [settings, setSettings] = useState(false)
   const [typing, setTyping] = useState<Record<string, number>>({})
-  const [found, setFound] = useState<Chat | null>(null)
+  const [found, setFound] = useState<Chat[]>([])
   const activeRef = useRef<string | null>(null)
   const chatsRef = useRef<Chat[]>([])
   activeRef.current = activeId
@@ -36,6 +37,16 @@ export function Messenger({ backend, onLogout }: Props) {
     backend.dialogs().then((d) => {
       setChats(d)
       setLoaded(true)
+      // the first page shows up fast; the rest of the chats arrive in the background
+      backend
+        .moreDialogs()
+        .then((all) =>
+          setChats((cur) => {
+            const have = new Set(cur.map((c) => c.id))
+            return [...cur, ...all.filter((c) => !have.has(c.id))]
+          }),
+        )
+        .catch(() => undefined)
     })
   }, [backend])
 
@@ -86,7 +97,7 @@ export function Messenger({ backend, onLogout }: Props) {
 
   const open = useCallback((id: string) => {
     setActiveId(id)
-    setFound(null)
+    setFound([])
   }, [])
 
   const onRead = useCallback((chatId: string, maxId: number, count: number) => {
@@ -95,27 +106,38 @@ export function Messenger({ backend, onLogout }: Props) {
     )
   }, [])
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/^@/, '')
-    return sortChats(chats).filter(
-      (c) => (!q || c.title.toLowerCase().includes(q) || c.username?.toLowerCase() === q) && (!onlyUnread || c.unread > 0),
-    )
-  }, [chats, query, onlyUnread])
+  const key = useMemo(() => searchKey(query), [query])
+  const visible = useMemo(
+    () =>
+      sortChats(chats).filter(
+        (c) => (!key || searchKey(c.title).includes(key) || searchKey(c.username ?? '').includes(key.replace(/^@/, ''))) && (!onlyUnread || c.unread > 0),
+      ),
+    [chats, key, onlyUnread],
+  )
 
-  // searching "@name" that is not among our chats looks the person up on Telegram
+  // names and @usernames that are not among our chats are looked up on Telegram
   useEffect(() => {
+    setFound([])
     const q = query.trim()
-    setFound(null)
-    if (!/^@?[a-zA-Z][\w]{3,31}$/.test(q) || visible.length) return
-    const timer = window.setTimeout(async () => setFound((await backend.resolve(q)) ?? null), 450)
-    return () => window.clearTimeout(timer)
-  }, [query, backend, visible.length])
+    if (q.replace(/^@/, '').length < 2 || onlyUnread) return
+    let alive = true
+    const timer = window.setTimeout(async () => {
+      const [byName, exact] = await Promise.all([backend.search(q), /^@?[a-zA-Z][\w]{3,31}$/.test(q) ? backend.resolve(q) : Promise.resolve(undefined)])
+      if (!alive) return
+      const have = new Set(chatsRef.current.map((c) => c.id))
+      const list = [...(exact ? [exact] : []), ...byName].filter((c, i, a) => !have.has(c.id) && a.findIndex((x) => x.id === c.id) === i)
+      setFound(list)
+    }, 400)
+    return () => {
+      alive = false
+      window.clearTimeout(timer)
+    }
+  }, [query, backend, onlyUnread])
 
-  const startFound = () => {
-    if (!found) return
-    setChats((p) => (p.some((c) => c.id === found.id) ? p : [found, ...p]))
+  const startFound = (c: Chat) => {
+    setChats((p) => (p.some((x) => x.id === c.id) ? p : [c, ...p]))
     setQuery('')
-    open(found.id)
+    open(c.id)
   }
 
   const active = chats.find((c) => c.id === activeId) ?? null
@@ -159,21 +181,28 @@ export function Messenger({ backend, onLogout }: Props) {
 
         <div className="scroll">
           {!loaded && [0, 1, 2, 3, 4].map((i) => <div className="skeleton" key={i} style={{ animationDelay: `${i * 0.12}s` }} />)}
-          {loaded && visible.length === 0 && !found && <p className="muted center">{query || onlyUnread ? t('empty.search') : t('empty.chats')}</p>}
-          {found && (
-            <button className="row-chat find" onClick={startFound}>
-              <Avatar backend={backend} id={found.id} title={found.title} />
-              <span className="mid">
-                <span className="name">{found.title}</span>
-                <span className="prev">{t('find', { x: found.username ?? '' })}</span>
-              </span>
-            </button>
-          )}
+          {loaded && visible.length === 0 && found.length === 0 && <p className="muted center">{query || onlyUnread ? t('empty.search') : t('empty.chats')}</p>}
           <AnimatePresence initial={false}>
             {visible.map((c) => (
               <ChatRow key={c.id} backend={backend} chat={c} active={c.id === activeId} typing={(typing[c.id] ?? 0) > Date.now()} onOpen={open} />
             ))}
           </AnimatePresence>
+          {found.length > 0 && (
+            <>
+              <p className="section">{t('global')}</p>
+              {found.map((c) => (
+                <button key={c.id} className="row-chat" onClick={() => startFound(c)}>
+                  <Avatar backend={backend} id={c.id} title={c.title} />
+                  <span className="mid">
+                    <span className="name">
+                      <span className="title">{c.title}</span>
+                    </span>
+                    <span className="prev">{c.username ? `@${c.username}` : t(`kind.${c.kind}` as Key)}</span>
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </aside>
 

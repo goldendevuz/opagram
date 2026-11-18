@@ -134,6 +134,14 @@ export class DemoBackend implements Backend {
     return p ? this.chat(p) : undefined
   }
 
+  async moreDialogs(): Promise<Chat[]> {
+    return []
+  }
+
+  async search(): Promise<Chat[]> {
+    return []
+  }
+
   async history(chatId: string): Promise<Msg[]> {
     return [...(this.msgs.get(chatId) ?? [])]
   }
