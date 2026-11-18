@@ -63,6 +63,34 @@ const uz = {
   'err.signup': 'Bu raqam Telegramda roʻyxatdan oʻtmagan',
   'err.generic': 'Xatolik yuz berdi',
   'err.network': 'Internetga ulanib boʻlmadi',
+  'reply': 'Javob berish',
+  'copy': 'Nusxalash',
+  'edit': 'Tahrirlash',
+  'delete': 'Oʻchirish',
+  'delete.ask': 'Xabar hamma uchun oʻchiriladi. Davom etasizmi?',
+  'editing': 'Tahrirlash',
+  'replying': 'Javob',
+  'attach': 'Fayl biriktirish',
+  'emoji': 'Emoji',
+  'send': 'Yuborish',
+  'edited': 'tahrirlangan',
+  'online': 'onlayn',
+  'seen.recently': 'yaqinda onlayn edi',
+  'seen.week': 'bir hafta ichida onlayn edi',
+  'seen.month': 'bir oy ichida onlayn edi',
+  'seen.at': 'oxirgi marta {x}',
+  'typing': 'yozmoqda…',
+  'newMessages': 'Yangi xabarlar',
+  'find': 'Topish: @{x}',
+  'copied': 'Nusxalandi',
+  'download': 'Yuklab olish',
+  'loading': 'Yuklanmoqda…',
+  'notify': 'Bildirishnomalar',
+  'notify.on': 'Yoqilgan',
+  'notify.off': 'Oʻchiq',
+  'notify.denied': 'Brauzer ruxsat bermadi',
+  'bot': 'bot',
+  'deleted': 'Xabar oʻchirilgan',
 }
 
 type Dict = typeof uz
@@ -127,6 +155,34 @@ const ru: Dict = {
   'err.signup': 'Этот номер не зарегистрирован в Telegram',
   'err.generic': 'Произошла ошибка',
   'err.network': 'Не удалось подключиться к интернету',
+  'reply': 'Ответить',
+  'copy': 'Копировать',
+  'edit': 'Изменить',
+  'delete': 'Удалить',
+  'delete.ask': 'Сообщение удалится у всех. Продолжить?',
+  'editing': 'Изменение',
+  'replying': 'Ответ',
+  'attach': 'Прикрепить файл',
+  'emoji': 'Эмодзи',
+  'send': 'Отправить',
+  'edited': 'изменено',
+  'online': 'в сети',
+  'seen.recently': 'был(а) недавно',
+  'seen.week': 'был(а) на этой неделе',
+  'seen.month': 'был(а) в этом месяце',
+  'seen.at': 'был(а) {x}',
+  'typing': 'печатает…',
+  'newMessages': 'Новые сообщения',
+  'find': 'Найти: @{x}',
+  'copied': 'Скопировано',
+  'download': 'Скачать',
+  'loading': 'Загрузка…',
+  'notify': 'Уведомления',
+  'notify.on': 'Включены',
+  'notify.off': 'Выключены',
+  'notify.denied': 'Браузер не разрешил',
+  'bot': 'бот',
+  'deleted': 'Сообщение удалено',
 }
 
 const en: Dict = {
@@ -189,6 +245,34 @@ const en: Dict = {
   'err.signup': 'This number is not registered in Telegram',
   'err.generic': 'Something went wrong',
   'err.network': 'Could not reach the internet',
+  'reply': 'Reply',
+  'copy': 'Copy',
+  'edit': 'Edit',
+  'delete': 'Delete',
+  'delete.ask': 'The message will be deleted for everyone. Continue?',
+  'editing': 'Editing',
+  'replying': 'Reply',
+  'attach': 'Attach a file',
+  'emoji': 'Emoji',
+  'send': 'Send',
+  'edited': 'edited',
+  'online': 'online',
+  'seen.recently': 'last seen recently',
+  'seen.week': 'last seen within a week',
+  'seen.month': 'last seen within a month',
+  'seen.at': 'last seen {x}',
+  'typing': 'typing…',
+  'newMessages': 'New messages',
+  'find': 'Find: @{x}',
+  'copied': 'Copied',
+  'download': 'Download',
+  'loading': 'Loading…',
+  'notify': 'Notifications',
+  'notify.on': 'On',
+  'notify.off': 'Off',
+  'notify.denied': 'The browser did not allow it',
+  'bot': 'bot',
+  'deleted': 'Message deleted',
 }
 
 const DICTS: Record<Lang, Dict> = { uz, ru, en }
@@ -197,7 +281,7 @@ export type Key = keyof Dict
 interface Ctx {
   lang: Lang
   setLang: (l: Lang) => void
-  t: (k: Key) => string
+  t: (k: Key, vars?: Record<string, string | number>) => string
   locale: string
   err: (e: unknown) => string
 }
@@ -225,7 +309,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
     document.documentElement.lang = l
   }, [])
-  const t = useCallback((k: Key) => DICTS[lang][k] ?? uz[k], [lang])
+  const t = useCallback(
+    (k: Key, vars?: Record<string, string | number>) => {
+      let text: string = DICTS[lang][k] ?? uz[k]
+      if (vars) for (const [name, v] of Object.entries(vars)) text = text.replace(`{${name}}`, String(v))
+      return text
+    },
+    [lang],
+  )
   const err = useCallback(
     (e: unknown) => {
       const msg = String((e as { errorMessage?: string; message?: string })?.errorMessage ?? (e as Error)?.message ?? '')

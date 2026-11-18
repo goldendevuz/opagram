@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useI18n } from '../i18n'
 import { LangSwitch } from './LangSwitch'
+import { notifyEnabled, notifySupported, setNotify } from '../lib/notify'
 
 type Theme = 'light' | 'dark' | 'auto'
 
@@ -29,6 +30,8 @@ export function Settings({ onClose, onLogout }: { onClose: () => void; onLogout:
   const { t } = useI18n()
   const [theme, setTheme] = useState<Theme>(currentTheme)
   const [confirm, setConfirm] = useState(false)
+  const [notif, setNotif] = useState(notifyEnabled)
+  const [denied, setDenied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -70,6 +73,34 @@ export function Settings({ onClose, onLogout }: { onClose: () => void; onLogout:
           ))}
         </div>
       </div>
+      {notifySupported() && (
+        <div className="setting">
+          <span>{t('notify')}</span>
+          <div className="seg">
+            <button
+              className={notif ? 'on' : ''}
+              onClick={async () => {
+                const ok = await setNotify(true)
+                setNotif(ok)
+                setDenied(!ok)
+              }}
+            >
+              {t('notify.on')}
+            </button>
+            <button
+              className={!notif ? 'on' : ''}
+              onClick={async () => {
+                await setNotify(false)
+                setNotif(false)
+                setDenied(false)
+              }}
+            >
+              {t('notify.off')}
+            </button>
+          </div>
+        </div>
+      )}
+      {denied && <p className="hint-err">{t('notify.denied')}</p>}
       {!confirm ? (
         <button className="btn danger" onClick={() => setConfirm(true)}>
           {t('logout')}

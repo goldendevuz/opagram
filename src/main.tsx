@@ -13,6 +13,11 @@ try {
   /* default theme stays */
 }
 
+// the browser's own right-click menu makes the app feel like a web page; keep it only for text fields and message text
+document.addEventListener('contextmenu', (e) => {
+  if (!(e.target as Element).closest('input, textarea, .text')) e.preventDefault()
+})
+
 createRoot(document.getElementById('root')!).render(
   <I18nProvider>
     <App />
