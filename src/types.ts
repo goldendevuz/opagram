@@ -77,6 +77,10 @@ export interface Backend {
   dialogs(): Promise<Chat[]>
   /** Oldest first. Pass beforeId to get the page before that message. */
   history(chatId: string, beforeId?: number): Promise<Msg[]>
+  /** Messages around the first unread one, oldest first (used when many are unread). */
+  around(chatId: string, readMaxId: number): Promise<Msg[]>
+  /** The page after afterId, oldest first. */
+  newer(chatId: string, afterId: number): Promise<Msg[]>
   send(chatId: string, text: string, replyTo?: number): Promise<Msg>
   sendFile(chatId: string, file: File, caption: string, replyTo?: number): Promise<Msg>
   edit(chatId: string, id: number, text: string): Promise<Msg>

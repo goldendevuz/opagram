@@ -142,6 +142,14 @@ export class DemoBackend implements Backend {
     return []
   }
 
+  async around(chatId: string): Promise<Msg[]> {
+    return this.history(chatId)
+  }
+
+  async newer(): Promise<Msg[]> {
+    return []
+  }
+
   async history(chatId: string): Promise<Msg[]> {
     return [...(this.msgs.get(chatId) ?? [])]
   }

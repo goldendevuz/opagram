@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { useI18n } from '../i18n'
 import { LangSwitch } from './LangSwitch'
 import { notifyEnabled, notifySupported, setNotify } from '../lib/notify'
+import { playIncoming, setSound, soundEnabled, unlockAudio } from '../lib/sound'
 
 type Theme = 'light' | 'dark' | 'auto'
 
@@ -32,6 +33,7 @@ export function Settings({ onClose, onLogout }: { onClose: () => void; onLogout:
   const [confirm, setConfirm] = useState(false)
   const [notif, setNotif] = useState(notifyEnabled)
   const [denied, setDenied] = useState(false)
+  const [sound, setSoundState] = useState(soundEnabled)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -71,6 +73,31 @@ export function Settings({ onClose, onLogout }: { onClose: () => void; onLogout:
               {t(`theme.${x}` as 'theme.light')}
             </button>
           ))}
+        </div>
+      </div>
+      <div className="setting">
+        <span>{t('sound')}</span>
+        <div className="seg">
+          <button
+            className={sound ? 'on' : ''}
+            onClick={() => {
+              setSound(true)
+              setSoundState(true)
+              unlockAudio()
+              setTimeout(playIncoming, 60)
+            }}
+          >
+            {t('notify.on')}
+          </button>
+          <button
+            className={!sound ? 'on' : ''}
+            onClick={() => {
+              setSound(false)
+              setSoundState(false)
+            }}
+          >
+            {t('notify.off')}
+          </button>
         </div>
       </div>
       {notifySupported() && (

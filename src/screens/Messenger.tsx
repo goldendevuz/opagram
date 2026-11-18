@@ -7,7 +7,8 @@ import { Wordmark } from '../components/Wordmark'
 import { Settings } from '../components/Settings'
 import { ChatView, dateLabel } from '../components/ChatView'
 import { Ticks } from '../components/Bubble'
-import { notify } from '../lib/notify'
+import { askNotifyOnce, notify } from '../lib/notify'
+import { playInChat, playIncoming, unlockAudio } from '../lib/sound'
 import { searchKey } from '../lib/translit'
 
 interface Props {
@@ -50,12 +51,30 @@ export function Messenger({ backend, onLogout }: Props) {
     })
   }, [backend])
 
-  // new messages: preview, unread counter, desktop notification
+  // sound and notification permission both need a user gesture first
+  useEffect(() => {
+    const unlock = () => {
+      unlockAudio()
+      askNotifyOnce()
+    }
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  // new messages: preview, unread counter, sound, desktop notification
   useEffect(
     () =>
       backend.onMessage((m, chat) => {
         const known = chatsRef.current.find((c) => c.id === m.chatId) ?? chat
         if (!m.out) setTyping((p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== m.chatId)))
+        if (!m.out && known && !known.muted) {
+          if (document.hidden || m.chatId !== activeRef.current) playIncoming()
+          else playInChat()
+        }
         if (!m.out && known && !known.muted && (document.hidden || m.chatId !== activeRef.current)) {
           notify(known.title, m.text || t(`media.${m.media ?? 'other'}` as Key), () => setActiveId(m.chatId))
         }

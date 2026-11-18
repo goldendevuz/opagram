@@ -2,11 +2,21 @@ const KEY = 'opagram.notify'
 
 export const notifySupported = () => typeof Notification !== 'undefined'
 
+/** On by default: it only stays off if the user switched it off or the browser refused. */
 export function notifyEnabled(): boolean {
   try {
-    return notifySupported() && Notification.permission === 'granted' && localStorage.getItem(KEY) === '1'
+    return notifySupported() && Notification.permission === 'granted' && localStorage.getItem(KEY) !== '0'
   } catch {
     return false
+  }
+}
+
+/** Asks for permission once, from a click, unless the user already turned notifications off. */
+export function askNotifyOnce() {
+  try {
+    if (notifySupported() && Notification.permission === 'default' && localStorage.getItem(KEY) !== '0') void Notification.requestPermission()
+  } catch {
+    /* ignore */
   }
 }
 

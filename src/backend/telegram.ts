@@ -305,6 +305,20 @@ export class TelegramBackend implements Backend {
     return this.build(chatId, [...list].reverse() as Api.Message[])
   }
 
+  async around(chatId: string, readMaxId: number): Promise<Msg[]> {
+    const entity = this.entities.get(chatId)
+    if (!entity) return []
+    const list = await this.client.getMessages(entity, { limit: PAGE, offsetId: readMaxId, addOffset: -Math.floor(PAGE / 2) })
+    return this.build(chatId, [...list].reverse() as Api.Message[])
+  }
+
+  async newer(chatId: string, afterId: number): Promise<Msg[]> {
+    const entity = this.entities.get(chatId)
+    if (!entity) return []
+    const list = await this.client.getMessages(entity, { limit: PAGE, offsetId: afterId, reverse: true })
+    return this.build(chatId, list as Api.Message[])
+  }
+
   async send(chatId: string, text: string, replyTo?: number): Promise<Msg> {
     const entity = this.entities.get(chatId)
     if (!entity) throw new Error('no chat')

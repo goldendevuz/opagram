@@ -4,6 +4,7 @@ import type { Backend, Chat, Msg, Presence } from '../types'
 import { useI18n, type Key } from '../i18n'
 import { Avatar } from './Avatar'
 import { Bubble } from './Bubble'
+import { playSend } from '../lib/sound'
 
 interface Props {
   backend: Backend
@@ -38,6 +39,7 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
   const [ready, setReady] = useState(false)
   const [fresh, setFresh] = useState<Set<number>>(new Set())
   const [more, setMore] = useState(true)
+  const [hasNewer, setHasNewer] = useState(false)
   const [text, setText] = useState('')
   const [reply, setReply] = useState<Msg | null>(null)
   const [editing, setEditing] = useState<Msg | null>(null)
@@ -56,6 +58,9 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
   const seenMax = useRef(0)
   const msgsRef = useRef<Msg[]>([])
   msgsRef.current = msgs
+  const hasNewerRef = useRef(false)
+  hasNewerRef.current = hasNewer
+  const loadingNewer = useRef(false)
   const readTimer = useRef<number>(0)
 
   const add = useCallback((m: Msg) => {
@@ -66,14 +71,24 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
   // ── load history, then jump to the first unread message (or the bottom)
   useEffect(() => {
     let alive = true
-    backend.history(chat.id).then((h) => {
+    const show = (h: Msg[], newer: boolean) => {
       if (!alive) return
       setMsgs(h)
       setMore(h.length >= 30)
+      setHasNewer(newer)
       const first = h.find((m) => !m.out && m.id > chat.readInboxMaxId)
       setDividerId(first && h.some((m) => m.id < first.id) ? first.id : null)
-      stick.current = !first
+      stick.current = !first && !newer
       setReady(true)
+    }
+    backend.history(chat.id).then(async (h) => {
+      const unseen = chat.unread > 0 && chat.readInboxMaxId > 0 && !h.some((m) => m.id <= chat.readInboxMaxId)
+      // more unread messages than one page: open at the first unread one, like the official app
+      if (unseen) {
+        const around = await backend.around(chat.id, chat.readInboxMaxId)
+        if (around.length) return show(around, true)
+      }
+      show(h, false)
     })
     return () => {
       alive = false
@@ -85,6 +100,11 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
   useEffect(() => {
     const offMsg = backend.onMessage((m) => {
       if (m.chatId !== chat.id) return
+      if (hasNewerRef.current) {
+        // the newest messages are not loaded yet: just count it, it arrives with the next page
+        if (!m.out) setAway((n) => n + 1)
+        return
+      }
       add(m)
       if (!m.out && !stick.current) setAway((n) => n + 1)
     })
@@ -164,10 +184,30 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
     })
   }
 
-  const toBottom = () => {
+  const loadNewer = async () => {
+    const last = msgsRef.current.at(-1)
+    if (!last || loadingNewer.current) return
+    loadingNewer.current = true
+    const h = await backend.newer(chat.id, last.id)
+    loadingNewer.current = false
+    setMsgs((prev) => [...prev, ...h.filter((m) => !prev.some((x) => x.id === m.id))])
+    if (h.length < 30) setHasNewer(false)
+  }
+
+  const toBottom = async () => {
     const el = scroller.current
-    stick.current = true
     setAway(0)
+    if (hasNewerRef.current) {
+      // jump over the gap: show the newest page instead of paging through everything
+      const h = await backend.history(chat.id)
+      setHasNewer(false)
+      setMore(h.length >= 30)
+      stick.current = true
+      setMsgs(h)
+      requestAnimationFrame(() => scroller.current?.scrollTo({ top: scroller.current.scrollHeight }))
+      return
+    }
+    stick.current = true
     el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }
 
@@ -198,6 +238,7 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
       }
       return
     }
+    playSend()
     const replyId = reply?.id
     const quote = reply ? { id: reply.id, text: reply.text, media: reply.media, sender: reply.out ? undefined : reply.sender ?? chat.title } : undefined
     setText('')
@@ -322,9 +363,10 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
         onScroll={(e) => {
           const el = e.currentTarget
           const near = el.scrollHeight - el.scrollTop - el.clientHeight < 140
-          stick.current = near
-          setAtBottom(near)
-          if (near) setAway(0)
+          stick.current = near && !hasNewerRef.current
+          setAtBottom(near && !hasNewerRef.current)
+          if (near && hasNewerRef.current && !loadingNewer.current) loadNewer()
+          if (near && !hasNewerRef.current) setAway(0)
         }}
       >
         {more && ready && (
@@ -363,7 +405,7 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
       </div>
 
       <AnimatePresence>
-        {(!atBottom || away > 0) && ready && (
+        {(!atBottom || away > 0 || hasNewer) && ready && (
           <motion.button
             className="to-bottom"
             initial={{ opacity: 0, scale: 0.6, y: 10 }}
