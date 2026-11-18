@@ -8,8 +8,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // CI passes the run-based numbers so every build installs over the previous one
-        versionCode (project.findProperty("opagramVersionCode") ?: "1").toInteger()
-        versionName (project.findProperty("opagramVersionName") ?: "0.1.0")
+        versionCode Integer.parseInt(String.valueOf(project.findProperty("opagramVersionCode") ?: "1"))
+        versionName String.valueOf(project.findProperty("opagramVersionName") ?: "0.1.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
