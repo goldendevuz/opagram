@@ -31,6 +31,8 @@ export interface Chat {
   username?: string
   presence?: Presence
   bot?: boolean
+  /** Telegram's profile colour index (0-6), used when there is no photo. */
+  colorId?: number
 }
 
 export interface Reply {
@@ -95,6 +97,8 @@ export interface Backend {
   photo(chatId: string, msgId: number): Promise<string | undefined>
   media(chatId: string, msgId: number): Promise<{ url: string; mime: string } | undefined>
   avatar(chatId: string): Promise<string | undefined>
+  /** Why the last download failed, for showing next to the retry button. */
+  lastError(): string
   onMessage(cb: (m: Msg, chat?: Chat) => void): () => void
   onUpdate(cb: (u: Update) => void): () => void
   session(): string

@@ -152,13 +152,15 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (!e.isIntersecting) continue
+          // a message taller than the screen can never be 60% visible: count it once it fills half the view
+          const seen = e.intersectionRatio >= 0.6 || e.intersectionRect.height >= root.clientHeight * 0.5
+          if (!e.isIntersecting || !seen) continue
           const id = Number((e.target as HTMLElement).dataset.mid)
           if (id > seenMax.current) seenMax.current = id
         }
         flush()
       },
-      { root, threshold: 0.6 },
+      { root, threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] },
     )
     root.querySelectorAll('[data-watch="1"]').forEach((n) => io.observe(n))
     const vis = () => !document.hidden && flush()
@@ -341,7 +343,7 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
             <path fill="currentColor" d="m14 6-6 6 6 6 1.4-1.4L10.8 12l4.6-4.6L14 6Z" />
           </svg>
         </button>
-        <Avatar backend={backend} id={chat.id} title={chat.title} size={44} />
+        <Avatar backend={backend} id={chat.id} title={chat.title} size={44} colorId={chat.colorId} />
         <div className="who">
           <strong>{chat.title}</strong>
           {typing ? (

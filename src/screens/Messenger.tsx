@@ -29,6 +29,7 @@ export function Messenger({ backend, onLogout }: Props) {
   const [settings, setSettings] = useState(false)
   const [typing, setTyping] = useState<Record<string, number>>({})
   const [found, setFound] = useState<Chat[]>([])
+  const [menu, setMenu] = useState<{ chat: Chat; x: number; y: number } | null>(null)
   const activeRef = useRef<string | null>(null)
   const chatsRef = useRef<Chat[]>([])
   activeRef.current = activeId
@@ -119,6 +120,32 @@ export function Messenger({ backend, onLogout }: Props) {
     setFound([])
   }, [])
 
+  const markRead = useCallback(
+    async (c: Chat) => {
+      if (c.previewId > 0) await backend.readUpTo(c.id, c.previewId).catch(() => undefined)
+      setChats((p) => p.map((x) => (x.id === c.id ? { ...x, unread: 0, readInboxMaxId: Math.max(x.readInboxMaxId, x.previewId) } : x)))
+    },
+    [backend],
+  )
+
+  const markAllRead = async () => {
+    for (const c of chatsRef.current.filter((x) => x.unread > 0)) {
+      await markRead(c)
+      await new Promise((r) => setTimeout(r, 120))
+    }
+  }
+
+  useEffect(() => {
+    if (!menu) return
+    const close = () => setMenu(null)
+    window.addEventListener('pointerdown', close)
+    window.addEventListener('keydown', close)
+    return () => {
+      window.removeEventListener('pointerdown', close)
+      window.removeEventListener('keydown', close)
+    }
+  }, [menu])
+
   const onRead = useCallback((chatId: string, maxId: number, count: number) => {
     setChats((prev) =>
       prev.map((c) => (c.id === chatId ? { ...c, readInboxMaxId: Math.max(c.readInboxMaxId, maxId), unread: Math.max(0, c.unread - count) } : c)),
@@ -195,6 +222,13 @@ export function Messenger({ backend, onLogout }: Props) {
               {t('unread')}
               {allUnread > 0 && <b>{allUnread > 99 ? '99+' : allUnread}</b>}
             </button>
+            {allUnread > 0 && (
+              <button className="icon-btn read-all" onClick={markAllRead} title={t('markAllRead')} aria-label={t('markAllRead')}>
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                  <path fill="currentColor" d="m2 12.5 1.4-1.4 3.6 3.6L16.6 5.1 18 6.5 7 17.5Zm7.4 0 1.4-1.4 2.2 2.2L22.6 3.7 24 5.1 13 16.1Z" />
+                </svg>
+              </button>
+            )}
           </div>
         </header>
 
@@ -203,7 +237,7 @@ export function Messenger({ backend, onLogout }: Props) {
           {loaded && visible.length === 0 && found.length === 0 && <p className="muted center">{query || onlyUnread ? t('empty.search') : t('empty.chats')}</p>}
           <AnimatePresence initial={false}>
             {visible.map((c) => (
-              <ChatRow key={c.id} backend={backend} chat={c} active={c.id === activeId} typing={(typing[c.id] ?? 0) > Date.now()} onOpen={open} />
+              <ChatRow key={c.id} backend={backend} chat={c} active={c.id === activeId} typing={(typing[c.id] ?? 0) > Date.now()} onOpen={open} onMenu={(chat, x, y) => setMenu({ chat, x, y })} />
             ))}
           </AnimatePresence>
           {found.length > 0 && (
@@ -211,7 +245,7 @@ export function Messenger({ backend, onLogout }: Props) {
               <p className="section">{t('global')}</p>
               {found.map((c) => (
                 <button key={c.id} className="row-chat" onClick={() => startFound(c)}>
-                  <Avatar backend={backend} id={c.id} title={c.title} />
+                  <Avatar backend={backend} id={c.id} title={c.title} colorId={c.colorId} />
                   <span className="mid">
                     <span className="name">
                       <span className="title">{c.title}</span>
@@ -242,14 +276,38 @@ export function Messenger({ backend, onLogout }: Props) {
           )}
         </AnimatePresence>
       </section>
+
+      <AnimatePresence>
+        {menu && (
+          <motion.div
+            className="ctx"
+            style={{ left: Math.min(menu.x, window.innerWidth - 230), top: Math.min(menu.y, window.innerHeight - 70) }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 520, damping: 30 }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                markRead(menu.chat)
+                setMenu(null)
+              }}
+            >
+              {t('markRead')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
 
 const label = (t: (k: Key) => string, kind?: MediaKind) => (kind ? t(`media.${kind}` as Key) : '')
 
-function ChatRow({ backend, chat, active, typing, onOpen }: { backend: Backend; chat: Chat; active: boolean; typing: boolean; onOpen: (id: string) => void }) {
+function ChatRow({ backend, chat, active, typing, onOpen, onMenu }: { backend: Backend; chat: Chat; active: boolean; typing: boolean; onOpen: (id: string) => void; onMenu: (c: Chat, x: number, y: number) => void }) {
   const { t, locale } = useI18n()
+  const press = useRef(0)
   const media = label(t, chat.previewMedia)
   const time = chat.date ? listTime(chat.date, locale, t) : ''
   return (
@@ -259,8 +317,20 @@ function ChatRow({ backend, chat, active, typing, onOpen }: { backend: Backend; 
       className={`row-chat ${active ? 'active' : ''} ${chat.unread > 0 ? 'has-unread' : ''}`}
       onClick={() => onOpen(chat.id)}
       whileTap={{ scale: 0.97 }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onMenu(chat, e.clientX, e.clientY)
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType === 'mouse') return
+        const { clientX: x, clientY: y } = e
+        press.current = window.setTimeout(() => onMenu(chat, x, y), 450)
+      }}
+      onPointerUp={() => window.clearTimeout(press.current)}
+      onPointerLeave={() => window.clearTimeout(press.current)}
+      onPointerCancel={() => window.clearTimeout(press.current)}
     >
-      <Avatar backend={backend} id={chat.id} title={chat.title} />
+      <Avatar backend={backend} id={chat.id} title={chat.title} colorId={chat.colorId} />
       <span className="mid">
         <span className="name">
           <span className="title">{chat.title}</span>

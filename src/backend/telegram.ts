@@ -1,9 +1,6 @@
-import { TelegramClient, Api, utils } from 'telegram'
-import { StringSession } from 'telegram/sessions'
-import { NewMessage, Raw, type NewMessageEvent } from 'telegram/events'
-import { EditedMessage } from 'telegram/events/EditedMessage'
-import { DeletedMessage } from 'telegram/events/DeletedMessage'
-import { CustomFile } from 'telegram/client/uploads'
+import { TelegramClient, Api, utils } from 'teleproto'
+import { StringSession } from 'teleproto/sessions'
+import { NewMessage, EditedMessage, DeletedMessage, Raw, type NewMessageEvent } from 'teleproto/events'
 import type { Backend, Chat, Ent, FileInfo, Keys, MediaKind, Msg, Presence, Update } from '../types'
 
 const PAGE = 40
@@ -78,13 +75,31 @@ function presenceOf(e: any): Presence | undefined {
   }
 }
 
+function colorOf(e: any, id: string): number {
+  const own = e?.color?.color
+  if (typeof own === 'number') return own % 7
+  // same fallback as the official apps for accounts without a chosen colour
+  const n = Number(BigInt(id.replace(/^-100/, '').replace(/^-/, '')) % 7n)
+  return [0, 7, 4, 1, 6, 3, 5][n] % 7
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('TIMEOUT')), ms)
+    p.then(
+      (v) => (clearTimeout(t), resolve(v)),
+      (e) => (clearTimeout(t), reject(e)),
+    )
+  })
+}
+
 function senderName(m: Api.Message): string | undefined {
   const s = m.sender as any
   return s?.firstName ?? s?.title
 }
 
 function blobUrl(buf: unknown, type = 'image/jpeg'): string | undefined {
-  if (!buf || typeof buf === 'string') return undefined
+  if (!buf || typeof buf === 'string' || (buf as { length?: number }).length === 0) return undefined
   return URL.createObjectURL(new Blob([buf as BlobPart], { type }))
 }
 
@@ -102,12 +117,12 @@ export class TelegramBackend implements Backend {
   private active = 0
   private waiters: (() => void)[] = []
   private cache = new Map<string, string>()
+  private failure = ''
 
   constructor(keys: Keys, session = '') {
     this.keys = keys
     this.client = new TelegramClient(new StringSession(session), keys.apiId, keys.apiHash, {
       connectionRetries: 5,
-      useWSS: true,
       appVersion: 'OpaGram 0.2',
     })
     this.client.setLogLevel('none' as never)
@@ -192,6 +207,7 @@ export class TelegramBackend implements Backend {
       username: e?.username,
       presence: d.isUser ? presenceOf(e) : undefined,
       bot: !!e?.bot,
+      colorId: colorOf(e, id),
     }
   }
 
@@ -223,6 +239,7 @@ export class TelegramBackend implements Backend {
       username: (e as any).username,
       presence: isUser ? presenceOf(e) : undefined,
       bot: isUser && !!e.bot,
+      colorId: colorOf(e, id),
     }
   }
 
@@ -329,9 +346,8 @@ export class TelegramBackend implements Backend {
   async sendFile(chatId: string, file: File, caption: string, replyTo?: number): Promise<Msg> {
     const entity = this.entities.get(chatId)
     if (!entity) throw new Error('no chat')
-    const buf = Buffer.from(await file.arrayBuffer())
     const m = await this.client.sendFile(entity, {
-      file: new CustomFile(file.name, file.size, '', buf),
+      file,
       caption,
       replyTo,
       forceDocument: !file.type.startsWith('image/'),
@@ -390,10 +406,11 @@ export class TelegramBackend implements Backend {
     const url = await this.slot(async () => {
       for (const opts of [{ thumb: 2 }, {}] as const) {
         try {
-          const u = blobUrl(await this.client.downloadMedia(m, opts as never))
+          const u = blobUrl(await withTimeout(this.client.downloadMedia(m, opts as never), 30000))
           if (u) return u
-        } catch {
-          /* try the next size */
+        } catch (e) {
+          this.failure = String((e as { errorMessage?: string }).errorMessage ?? (e as Error).message ?? e).slice(0, 90)
+          console.error('[opagram] photo download failed', e)
         }
       }
       return undefined
@@ -411,8 +428,10 @@ export class TelegramBackend implements Backend {
     if (hit) return { url: hit, mime }
     const url = await this.slot(async () => {
       try {
-        return blobUrl(await this.client.downloadMedia(m, {}), mime)
-      } catch {
+        return blobUrl(await withTimeout(this.client.downloadMedia(m, {}), 120000), mime)
+      } catch (e) {
+        this.failure = String((e as { errorMessage?: string }).errorMessage ?? (e as Error).message ?? e).slice(0, 90)
+        console.error('[opagram] media download failed', e)
         return undefined
       }
     })
@@ -426,11 +445,15 @@ export class TelegramBackend implements Backend {
     if (!entity) return undefined
     return this.slot(async () => {
       try {
-        return blobUrl(await this.client.downloadProfilePhoto(entity, { isBig: false }))
+        return blobUrl(await withTimeout(this.client.downloadProfilePhoto(entity, { isBig: false }), 20000))
       } catch {
         return undefined
       }
     })
+  }
+
+  lastError(): string {
+    return this.failure
   }
 
   // ───────── live updates ─────────

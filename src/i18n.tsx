@@ -93,6 +93,8 @@ const uz = {
   'deleted': 'Xabar oʻchirilgan',
   'global': 'Telegramdan topilganlar',
   'sound': 'Ovoz',
+  'markRead': 'Oʻqilgan deb belgilash',
+  'markAllRead': 'Hammasini oʻqilgan qilish',
 }
 
 type Dict = typeof uz
@@ -187,6 +189,8 @@ const ru: Dict = {
   'deleted': 'Сообщение удалено',
   'global': 'Найдено в Telegram',
   'sound': 'Звук',
+  'markRead': 'Прочитано',
+  'markAllRead': 'Прочитать все',
 }
 
 const en: Dict = {
@@ -279,6 +283,8 @@ const en: Dict = {
   'deleted': 'Message deleted',
   'global': 'Found on Telegram',
   'sound': 'Sound',
+  'markRead': 'Mark as read',
+  'markAllRead': 'Mark all as read',
 }
 
 const DICTS: Record<Lang, Dict> = { uz, ru, en }
