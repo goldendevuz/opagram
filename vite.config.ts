@@ -6,7 +6,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 export default defineConfig({
   plugins: [
     react(),
-    nodePolyfills({ include: ['buffer', 'util', 'events', 'stream', 'os', 'path', 'process', 'assert', 'crypto'], globals: { Buffer: true, process: true, global: true } }),
+    nodePolyfills({ include: ['buffer', 'util', 'events', 'stream', 'os', 'path', 'process', 'assert'], globals: { Buffer: true, process: true, global: true } }),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
@@ -24,5 +24,7 @@ export default defineConfig({
       },
     }),
   ],
+  // GramJS ships its own WebCrypto-based crypto module for browsers; use it instead of crypto-browserify
+  resolve: { alias: [{ find: /^crypto$/, replacement: 'telegram/crypto/crypto.js' }] },
   build: { target: 'es2022' },
 })

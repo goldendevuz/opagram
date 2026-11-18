@@ -1,4 +1,3 @@
-import './polyfill'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/onest'
 import '@fontsource-variable/unbounded'
