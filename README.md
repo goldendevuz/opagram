@@ -1,6 +1,19 @@
-# OpaGram
+<div align="center">
+  <img src="./src-tauri/icons/128x128.png" width="100" alt="OpaGram" />
+  <h1>OpaGram</h1>
+  <p>A simple, distraction-free Telegram client for reading and writing messages.</p>
 
-A simple, distraction-free Telegram client for reading and writing messages.
+  <h4>
+    <a href="#keys">Keys</a> | <a href="#run">Run</a> | <a href="#deploy">Deploy</a>
+  </h4>
+
+  [![Stars](https://img.shields.io/github/stars/goldendevuz/opagram?logo=github&style=plastic&labelColor=18181b&color=ff7a3d&logoColor=ff7a3d&cacheSeconds=10000)](https://github.com/goldendevuz/opagram/stargazers)
+  &nbsp;[![Downloads](https://img.shields.io/github/downloads/goldendevuz/opagram/total?logo=hack-the-box&label=downloads&style=plastic&labelColor=18181b&color=ff7a3d&logoColor=ff7a3d&cacheSeconds=10000)](https://github.com/goldendevuz/opagram/releases)
+  &nbsp;[![Web](https://img.shields.io/badge/web-opagram.univel.uz-ff7a3d?logo=googlechrome&style=plastic&labelColor=18181b&color=ff7a3d&logoColor=ff7a3d&cacheSeconds=10000)](https://opagram.univel.uz)
+  &nbsp;[![Platforms](https://img.shields.io/badge/platforms-web%20%7C%20android%20%7C%20windows-ff7a3d?style=plastic&labelColor=18181b&color=ff7a3d&logoColor=ff7a3d&cacheSeconds=10000)](#run)
+  &nbsp;[![Languages](https://img.shields.io/badge/lang-uz%20%7C%20ru%20%7C%20en-ff7a3d?style=plastic&labelColor=18181b&color=ff7a3d&logoColor=ff7a3d&cacheSeconds=10000)](#run)
+</div>
+
 Web first (also packaged as an Android app), desktop later.
 
 Languages: Uzbek (default), Russian, English.
