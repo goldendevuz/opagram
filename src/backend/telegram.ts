@@ -368,8 +368,17 @@ export class TelegramBackend implements Backend {
   }
 
   async readUpTo(chatId: string, maxId: number): Promise<void> {
-    const entity = this.entities.get(chatId)
-    if (entity) await this.client.markAsRead(entity, undefined, { maxId })
+    try {
+      let entity = this.entities.get(chatId)
+      if (!entity) {
+        entity = await this.client.getInputEntity(chatId).catch(() => undefined)
+        if (entity) this.entities.set(chatId, entity)
+      }
+      if (!entity) return
+      await this.client.markAsRead(entity, maxId > 0 ? maxId : undefined, { maxId: maxId > 0 ? maxId : undefined })
+    } catch {
+      /* ignore read receipts failure */
+    }
   }
 
   async setTyping(chatId: string): Promise<void> {
@@ -500,6 +509,13 @@ export class TelegramBackend implements Backend {
       const peerId = (p: Api.TypePeer) => utils.getPeerId(p).toString()
       if (u instanceof Api.UpdateReadHistoryOutbox) {
         this.emit({ type: 'read-out', chatId: peerId(u.peer), maxId: u.maxId })
+      } else if (u instanceof Api.UpdateReadHistoryInbox) {
+        this.emit({ type: 'read-in', chatId: peerId(u.peer), maxId: u.maxId, stillUnread: u.stillUnreadCount })
+      } else if (u instanceof Api.UpdateReadChannelInbox) {
+        this.emit({ type: 'read-in', chatId: peerId(new Api.PeerChannel({ channelId: u.channelId })), maxId: u.maxId, stillUnread: u.stillUnreadCount })
+      } else if (u instanceof Api.UpdateChannelReadMessagesContents) {
+        const max = u.messages?.length ? Math.max(...u.messages) : 0
+        if (max > 0) this.emit({ type: 'read-in', chatId: peerId(new Api.PeerChannel({ channelId: u.channelId })), maxId: max })
       } else if (u instanceof Api.UpdateUserTyping && u.action instanceof Api.SendMessageTypingAction) {
         this.emit({ type: 'typing', chatId: peerId(new Api.PeerUser({ userId: u.userId })) })
       } else if (u instanceof Api.UpdateChatUserTyping && u.action instanceof Api.SendMessageTypingAction) {

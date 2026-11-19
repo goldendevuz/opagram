@@ -67,6 +67,7 @@ export interface Msg {
 
 export type Update =
   | { type: 'read-out'; chatId: string; maxId: number }
+  | { type: 'read-in'; chatId: string; maxId: number; stillUnread?: number }
   | { type: 'edit'; msg: Msg }
   | { type: 'delete'; chatId?: string; ids: number[] }
   | { type: 'typing'; chatId: string; who?: string }

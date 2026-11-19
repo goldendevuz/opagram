@@ -68,6 +68,30 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
     setFresh((f) => new Set(f).add(m.id))
   }, [])
 
+  // Keep refs in sync when chat inbox max id moves forward
+  useEffect(() => {
+    readMax.current = Math.max(readMax.current, chat.readInboxMaxId)
+    seenMax.current = Math.max(seenMax.current, chat.readInboxMaxId)
+  }, [chat.readInboxMaxId])
+
+  // ── mark messages as read once they are really on screen
+  const flush = useCallback(
+    (immediate?: boolean) => {
+      window.clearTimeout(readTimer.current)
+      const execute = () => {
+        if (document.hidden || seenMax.current <= readMax.current) return
+        const upTo = seenMax.current
+        const count = msgsRef.current.filter((m) => !m.out && m.id > readMax.current && m.id <= upTo).length
+        readMax.current = upTo
+        backend.readUpTo(chat.id, upTo).catch(() => undefined)
+        onRead(chat.id, upTo, count)
+      }
+      if (immediate) execute()
+      else readTimer.current = window.setTimeout(execute, 180)
+    },
+    [backend, chat.id, onRead],
+  )
+
   // ── load history, then jump to the first unread message (or the bottom)
   useEffect(() => {
     let alive = true
@@ -80,6 +104,13 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
       setDividerId(first && h.some((m) => m.id < first.id) ? first.id : null)
       stick.current = !first && !newer
       setReady(true)
+      if (!newer && h.length > 0) {
+        const lastId = Math.max(h.at(-1)?.id ?? 0, chat.previewId)
+        if (lastId > seenMax.current) {
+          seenMax.current = lastId
+          flush(true)
+        }
+      }
     }
     backend.history(chat.id).then(async (h) => {
       const unseen = chat.unread > 0 && chat.readInboxMaxId > 0 && !h.some((m) => m.id <= chat.readInboxMaxId)
@@ -106,7 +137,14 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
         return
       }
       add(m)
-      if (!m.out && !stick.current) setAway((n) => n + 1)
+      if (!m.out) {
+        if (stick.current && !document.hidden) {
+          seenMax.current = Math.max(seenMax.current, m.id)
+          flush(true)
+        } else {
+          setAway((n) => n + 1)
+        }
+      }
     })
     const offUp = backend.onUpdate((u) => {
       if (u.type === 'edit' && u.msg.chatId === chat.id) setMsgs((p) => p.map((x) => (x.id === u.msg.id ? { ...x, ...u.msg } : x)))
@@ -116,7 +154,7 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
       offMsg()
       offUp()
     }
-  }, [backend, chat.id, add])
+  }, [backend, chat.id, add, flush])
 
   // ── first scroll position
   useLayoutEffect(() => {
@@ -133,43 +171,44 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
     if (el && ready && stick.current) el.scrollTo({ top: el.scrollHeight, behavior: fresh.size ? 'smooth' : 'auto' })
   }, [msgs, ready, fresh])
 
-  // ── mark messages as read once they are really on screen
-  const flush = useCallback(() => {
-    window.clearTimeout(readTimer.current)
-    readTimer.current = window.setTimeout(() => {
-      if (document.hidden || seenMax.current <= readMax.current) return
-      const upTo = seenMax.current
-      const count = msgsRef.current.filter((m) => !m.out && m.id > readMax.current && m.id <= upTo).length
-      readMax.current = upTo
-      backend.readUpTo(chat.id, upTo).catch(() => undefined)
-      onRead(chat.id, upTo, count)
-    }, 280)
-  }, [backend, chat.id, onRead])
 
   useEffect(() => {
     const root = scroller.current
     if (!root || !ready) return
     const io = new IntersectionObserver(
       (entries) => {
+        let changed = false
         for (const e of entries) {
-          // a message taller than the screen can never be 60% visible: count it once it fills half the view
-          const seen = e.intersectionRatio >= 0.6 || e.intersectionRect.height >= root.clientHeight * 0.5
-          if (!e.isIntersecting || !seen) continue
+          if (!e.isIntersecting) continue
           const id = Number((e.target as HTMLElement).dataset.mid)
-          if (id > seenMax.current) seenMax.current = id
+          if (id > seenMax.current) {
+            seenMax.current = id
+            changed = true
+          }
         }
-        flush()
+        if (changed) flush()
       },
-      { root, threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+      { root, threshold: [0, 0.2, 0.5] },
     )
-    root.querySelectorAll('[data-watch="1"]').forEach((n) => io.observe(n))
-    const vis = () => !document.hidden && flush()
+    root.querySelectorAll('[data-mid]').forEach((n) => io.observe(n))
+    const vis = () => {
+      if (!document.hidden && stick.current && !hasNewerRef.current) {
+        const last = msgsRef.current.at(-1)
+        const lastId = Math.max(last?.id ?? 0, chat.previewId)
+        if (lastId > seenMax.current) {
+          seenMax.current = lastId
+          flush(true)
+        }
+      }
+    }
     document.addEventListener('visibilitychange', vis)
+    window.addEventListener('focus', vis)
     return () => {
       io.disconnect()
       document.removeEventListener('visibilitychange', vis)
+      window.removeEventListener('focus', vis)
     }
-  }, [msgs, ready, flush])
+  }, [msgs, ready, flush, chat.previewId])
 
   useEffect(() => () => window.clearTimeout(readTimer.current), [])
 
@@ -206,10 +245,21 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
       setMore(h.length >= 30)
       stick.current = true
       setMsgs(h)
+      const lastId = Math.max(h.at(-1)?.id ?? 0, chat.previewId)
+      if (lastId > seenMax.current) {
+        seenMax.current = lastId
+        flush(true)
+      }
       requestAnimationFrame(() => scroller.current?.scrollTo({ top: scroller.current.scrollHeight }))
       return
     }
     stick.current = true
+    const last = msgsRef.current.at(-1)
+    const lastId = Math.max(last?.id ?? 0, chat.previewId)
+    if (lastId > seenMax.current) {
+      seenMax.current = lastId
+      flush(true)
+    }
     el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }
 
@@ -247,6 +297,12 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
     setReply(null)
     resize(true)
     stick.current = true
+    const lastMsg = msgsRef.current.at(-1)
+    const lastId = Math.max(lastMsg?.id ?? 0, chat.previewId)
+    if (lastId > seenMax.current) {
+      seenMax.current = lastId
+      flush(true)
+    }
     const temp: Msg = { id: -Date.now(), chatId: chat.id, out: true, text: body, date: Math.floor(Date.now() / 1000), pending: true, replyTo: quote }
     add(temp)
     try {
@@ -368,7 +424,15 @@ export function ChatView({ backend, chat, typing, onBack, onRead }: Props) {
           stick.current = near && !hasNewerRef.current
           setAtBottom(near && !hasNewerRef.current)
           if (near && hasNewerRef.current && !loadingNewer.current) loadNewer()
-          if (near && !hasNewerRef.current) setAway(0)
+          if (near && !hasNewerRef.current) {
+            setAway(0)
+            const last = msgsRef.current.at(-1)
+            const lastId = Math.max(last?.id ?? 0, chat.previewId)
+            if (lastId > seenMax.current) {
+              seenMax.current = lastId
+              flush(true)
+            }
+          }
         }}
       >
         {more && ready && (

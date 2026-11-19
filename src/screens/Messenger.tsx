@@ -71,6 +71,7 @@ export function Messenger({ backend, onLogout }: Props) {
     () =>
       backend.onMessage((m, chat) => {
         const known = chatsRef.current.find((c) => c.id === m.chatId) ?? chat
+        const isCurrentActive = m.chatId === activeRef.current && !document.hidden
         if (!m.out) setTyping((p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== m.chatId)))
         if (!m.out && known && !known.muted) {
           if (document.hidden || m.chatId !== activeRef.current) playIncoming()
@@ -79,11 +80,15 @@ export function Messenger({ backend, onLogout }: Props) {
         if (!m.out && known && !known.muted && (document.hidden || m.chatId !== activeRef.current)) {
           notify(known.title, m.text || t(`media.${m.media ?? 'other'}` as Key), () => setActiveId(m.chatId))
         }
+        if (isCurrentActive && !m.out && m.id > 0) {
+          backend.readUpTo(m.chatId, m.id).catch(() => undefined)
+        }
         setChats((prev) => {
           const i = prev.findIndex((c) => c.id === m.chatId)
-          if (i === -1) return chat ? [{ ...chat, unread: m.out ? 0 : 1 }, ...prev] : prev
+          if (i === -1) return chat ? [{ ...chat, unread: m.out || isCurrentActive ? 0 : 1, readInboxMaxId: isCurrentActive ? m.id : chat.readInboxMaxId }] : prev
           const c = prev[i]
           const next = [...prev]
+          const unread = m.out || isCurrentActive ? (isCurrentActive ? 0 : c.unread) : c.unread + 1
           next[i] = {
             ...c,
             previewText: m.text,
@@ -91,7 +96,8 @@ export function Messenger({ backend, onLogout }: Props) {
             previewOut: m.out,
             previewId: m.id,
             date: m.date,
-            unread: m.out ? c.unread : c.unread + 1,
+            unread,
+            readInboxMaxId: isCurrentActive && !m.out ? Math.max(c.readInboxMaxId, m.id) : c.readInboxMaxId,
           }
           return next
         })
@@ -104,6 +110,16 @@ export function Messenger({ backend, onLogout }: Props) {
     () =>
       backend.onUpdate((u) => {
         if (u.type === 'read-out') setChats((p) => p.map((c) => (c.id === u.chatId ? { ...c, readOutboxMaxId: Math.max(c.readOutboxMaxId, u.maxId) } : c)))
+        if (u.type === 'read-in') {
+          setChats((p) =>
+            p.map((c) => {
+              if (c.id !== u.chatId) return c
+              const newMax = Math.max(c.readInboxMaxId, u.maxId)
+              const unread = typeof u.stillUnread === 'number' ? u.stillUnread : newMax >= c.previewId ? 0 : Math.max(0, c.unread - 1)
+              return { ...c, readInboxMaxId: newMax, unread }
+            }),
+          )
+        }
         if (u.type === 'presence') setChats((p) => p.map((c) => (c.id === u.chatId ? { ...c, presence: u.presence } : c)))
         if (u.type === 'typing') {
           const until = Date.now() + 5500
@@ -115,10 +131,19 @@ export function Messenger({ backend, onLogout }: Props) {
     [backend],
   )
 
-  const open = useCallback((id: string) => {
-    setActiveId(id)
-    setFound([])
-  }, [])
+  const open = useCallback(
+    (id: string) => {
+      setActiveId(id)
+      setFound([])
+      const c = chatsRef.current.find((x) => x.id === id)
+      if (c && c.unread > 0) {
+        const upTo = Math.max(c.previewId, c.readInboxMaxId)
+        if (upTo > 0) backend.readUpTo(c.id, upTo).catch(() => undefined)
+        setChats((p) => p.map((x) => (x.id === id ? { ...x, unread: 0, readInboxMaxId: Math.max(x.readInboxMaxId, upTo) } : x)))
+      }
+    },
+    [backend],
+  )
 
   const markRead = useCallback(
     async (c: Chat) => {
@@ -146,9 +171,32 @@ export function Messenger({ backend, onLogout }: Props) {
     }
   }, [menu])
 
-  const onRead = useCallback((chatId: string, maxId: number, count: number) => {
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden || !activeRef.current) return
+      const target = chatsRef.current.find((c) => c.id === activeRef.current)
+      if (target && target.unread > 0) {
+        const upTo = Math.max(target.previewId, target.readInboxMaxId)
+        if (upTo > 0) backend.readUpTo(target.id, upTo).catch(() => undefined)
+        setChats((p) => p.map((c) => (c.id === target.id ? { ...c, unread: 0, readInboxMaxId: Math.max(c.readInboxMaxId, upTo) } : c)))
+      }
+    }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('focus', onVis)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onVis)
+    }
+  }, [backend])
+
+  const onRead = useCallback((chatId: string, maxId: number, count?: number) => {
     setChats((prev) =>
-      prev.map((c) => (c.id === chatId ? { ...c, readInboxMaxId: Math.max(c.readInboxMaxId, maxId), unread: Math.max(0, c.unread - count) } : c)),
+      prev.map((c) => {
+        if (c.id !== chatId) return c
+        const newMax = Math.max(c.readInboxMaxId, maxId)
+        const unread = newMax >= c.previewId ? 0 : typeof count === 'number' ? Math.max(0, c.unread - count) : 0
+        return { ...c, readInboxMaxId: newMax, unread }
+      }),
     )
   }, [])
 
